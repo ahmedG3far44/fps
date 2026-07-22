@@ -1,0 +1,773 @@
+Absolutely. I would actually design this as if it were a real SaaS product that could scale to 
+hundreds of thousands of users. 
+
+I would not keep SQLite for production. My recommendation is: 
+
+•  Development: SQLite + Prisma 
+•  Production: PostgreSQL + Prisma (Neon/Supabase/Railway) 
+
+Since Prisma supports both, you can start with SQLite locally and migrate later with almost 
+no code changes. 
+
+Product Requirements Document (PRD) 
+
+Project Name 
+
+FrameWise AI 
+
+AI-powered PC Gaming Performance Analyzer 
+
+1. Overview 
+
+FrameWise AI is a web platform that automatically detects a user's PC hardware, predicts 
+expected FPS across thousands of games, analyzes hardware bottlenecks, recommends 
+upgrades based on the user's budget and country, and provides AI-generated optimization 
+advice. 
+
+Unlike traditional "Can You Run It?" websites, FrameWise focuses on: 
+
+•  Expected FPS 
+•  Performance score 
+•  Upgrade recommendations 
+•  Local market pricing 
+•  AI explanations 
+
+ 
+ 
+Goals 
+
+Users should be able to answer these questions within 30 seconds: 
+
+•  Can my PC run this game? 
+•  How many FPS should I expect? 
+•  Which component is limiting performance? 
+•  What should I upgrade first? 
+•  How much will that upgrade cost in my country? 
+
+Target Audience 
+
+•  PC gamers 
+•  Laptop gamers 
+•  PC builders 
+•  Students 
+•  Gaming cafés 
+•  Hardware reviewers 
+
+Tech Stack 
+
+Frontend 
+
+•  Next.js 15 App Router 
+•  React 19 
+•  TypeScript 
+•  Tailwind CSS 
+•  shadcn/ui 
+•  React Hook Form 
+
+ 
+ 
+ 
+•  Zod 
+•  TanStack Query 
+•  Framer Motion 
+•  Recharts 
+
+Backend 
+
+•  Next.js Route Handlers 
+•  Prisma ORM 
+•  SQLite (Development) 
+•  PostgreSQL (Production) 
+•  NextAuth/Auth.js 
+• 
+JWT Sessions 
+
+Storage 
+
+•  Cloudinary (game covers if needed) 
+
+Caching 
+
+•  Redis 
+
+AI 
+
+•  OpenRouter API 
+
+Deployment 
+
+•  Vercel 
+•  Neon PostgreSQL 
+
+Hardware Detection 
+
+Because browsers cannot access detailed hardware information (CPU/GPU model, RAM 
+capacity, etc.) for security reasons, true automatic detection requires a small companion 
+desktop application (Windows initially) that securely sends the hardware profile to the 
+
+ 
+authenticated user. The web app can detect only limited information (screen resolution, 
+browser, OS hints, etc.) on its own. 
+
+Companion App Responsibilities 
+
+•  Detect CPU, GPU, RAM, storage, motherboard, monitor resolution, OS. 
+•  Authenticate with the user's account. 
+•  Upload hardware profile. 
+•  Periodically sync if hardware changes. 
+
+User Flow 
+
+Landing 
+
+↓ 
+
+Register 
+
+↓ 
+
+Login 
+
+↓ 
+
+Install Hardware Detector 
+
+↓ 
+
+Hardware Synced 
+
+↓ 
+
+Dashboard 
+
+↓ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Browse Games 
+
+↓ 
+
+Game Details 
+
+↓ 
+
+AI Upgrade Suggestions 
+
+Authentication 
+
+Public 
+
+•  Register 
+•  Login 
+•  Forgot Password 
+•  Reset Password 
+•  Verify Email 
+
+Protected 
+
+•  Dashboard 
+•  Games 
+•  Game Details 
+•  Upgrade Planner 
+•  AI Assistant 
+•  Profile 
+•  Settings 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+User Roles 
+
+User 
+
+Admin 
+
+Public Pages 
+
+/ 
+
+About 
+
+Features 
+
+Pricing 
+
+Games 
+
+Game Details (public read-only) 
+
+/login 
+
+/register 
+
+/forgot-password 
+
+/reset-password 
+
+/privacy 
+
+/terms 
+
+/contact 
+
+/blog 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+/changelog 
+
+Protected Pages 
+
+/dashboard 
+
+/profile 
+
+/settings 
+
+/my-pc 
+
+/upgrade-planner 
+
+/ai 
+
+/history 
+
+/account 
+
+/logout 
+
+Admin Pages 
+
+/admin 
+
+/admin/games 
+
+/admin/game/new 
+
+/admin/game/edit 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+/admin/hardware 
+
+/admin/prices 
+
+/admin/users 
+
+/admin/benchmarks 
+
+/admin/blog 
+
+Dashboard 
+
+Sections 
+
+Hardware Summary 
+
+Gaming Score 
+
+Detected Hardware 
+
+Performance Overview 
+
+Latest Games 
+
+Upgrade Recommendation 
+
+Recent Searches 
+
+Quick Search 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Games Page 
+
+Search 
+
+Filters 
+
+Genre 
+
+Developer 
+
+Publisher 
+
+Release Year 
+
+Minimum FPS 
+
+Resolution 
+
+Sorting 
+
+Newest 
+
+Highest FPS 
+
+Lowest FPS 
+
+Most Popular 
+
+Game Details 
+
+Hero 
+
+Cover 
+
+Title 
+
+Developer 
+
+Publisher 
+
+ 
+Genre 
+
+Release Date 
+
+Engine 
+
+Performance 
+
+720P 
+
+1080P 
+
+1440P 
+
+4K 
+
+Ultra 
+
+High 
+
+Medium 
+
+Low 
+
+FPS Color 
+
+Requirements 
+
+Minimum 
+
+Recommended 
+
+AI Analysis 
+
+Performance Explanation 
+
+Upgrade Advice 
+
+ 
+ 
+ 
+Optimization Tips 
+
+Budget Recommendations 
+
+Related Games 
+
+Upgrade Planner 
+
+Input 
+
+Budget 
+
+Preferred Resolution 
+
+Preferred FPS 
+
+Graphics Quality 
+
+Output 
+
+Recommended GPU 
+
+Recommended CPU 
+
+Estimated FPS 
+
+Price 
+
+Country 
+
+Store 
+
+AI Assistant 
+
+Powered by OpenRouter 
+
+ 
+ 
+ 
+User asks 
+
+Can I play GTA VI? 
+
+How can I reach 144 FPS? 
+
+What should I upgrade first? 
+
+My budget is $300. 
+
+AI returns 
+
+Hardware analysis 
+
+Upgrade advice 
+
+Optimization guide 
+
+Expected FPS 
+
+Settings 
+
+Theme 
+
+Country 
+
+Currency 
+
+Preferred Resolution 
+
+Language 
+
+Notification Preferences 
+
+ 
+ 
+ 
+ 
+ 
+ 
+Profile 
+
+Avatar 
+
+Username 
+
+Email 
+
+Hardware 
+
+Statistics 
+
+Search 
+
+Global Search 
+
+Games 
+
+GPU 
+
+CPU 
+
+Developers 
+
+Publishers 
+
+Performance Indicators 
+
+Label 
+
+Poor 
+Playable 
+Smooth 
+
+FPS 
+0-29 
+30-59 
+60-89 
+90-119  High Refresh  Blue 
+120+ 
+
+Color 
+Red 
+Yellow 
+Green 
+
+Competitive  Purple 
+
+ 
+ 
+Database Modules 
+
+Users 
+
+Games 
+
+Developers 
+
+Publishers 
+
+Genres 
+
+Hardware 
+
+Benchmarks 
+
+Requirements 
+
+Recommendations 
+
+Prices 
+
+Countries 
+
+Currencies 
+
+AI Conversations 
+
+Search History 
+
+Folder Structure 
+
+framewise-ai/ 
+
+├── app/ 
+│   ├── (marketing)/ 
+
+ 
+ 
+ 
+│   │   ├── page.tsx 
+│   │   ├── pricing/ 
+│   │   ├── features/ 
+│   │   ├── about/ 
+│   │   ├── contact/ 
+│   │   └── games/ 
+│   │ 
+│   ├── (auth)/ 
+│   │   ├── login/ 
+│   │   ├── register/ 
+│   │   ├── forgot-password/ 
+│   │   └── reset-password/ 
+│   │ 
+│   ├── (dashboard)/ 
+│   │   ├── dashboard/ 
+│   │   ├── my-pc/ 
+│   │   ├── games/ 
+│   │   ├── games/[slug]/ 
+│   │   ├── upgrade-planner/ 
+│   │   ├── ai/ 
+│   │   ├── profile/ 
+│   │   ├── settings/ 
+│   │   └── history/ 
+│   │ 
+│   ├── admin/ 
+│   │ 
+│   ├── api/ 
+│   │ 
+│   ├── globals.css 
+│   └── layout.tsx 
+│ 
+├── components/ 
+│   ├── ui/ 
+│   ├── game/ 
+│   ├── hardware/ 
+│   ├── charts/ 
+│   ├── dashboard/ 
+│   ├── ai/ 
+│   ├── forms/ 
+
+│   ├── shared/ 
+│   └── layout/ 
+│ 
+├── features/ 
+│   ├── auth/ 
+│   ├── games/ 
+│   ├── hardware/ 
+│   ├── benchmarks/ 
+│   ├── ai/ 
+│   ├── profile/ 
+│   ├── settings/ 
+│   └── upgrade/ 
+│ 
+├── actions/ 
+│ 
+├── hooks/ 
+│ 
+├── services/ 
+│   ├── openrouter/ 
+│   ├── hardware/ 
+│   ├── benchmarks/ 
+│   ├── pricing/ 
+│   └── cache/ 
+│ 
+├── lib/ 
+│   ├── prisma.ts 
+│   ├── auth.ts 
+│   ├── redis.ts 
+│   ├── utils.ts 
+│   ├── validators/ 
+│   └── constants/ 
+│ 
+├── prisma/ 
+│   ├── schema.prisma 
+│   ├── migrations/ 
+│   └── seed.ts 
+│ 
+├── types/ 
+├── config/ 
+
+├── public/ 
+├── middleware.ts 
+└── package.json 
+
+API Routes 
+
+POST   /api/auth/login 
+POST   /api/auth/register 
+POST   /api/auth/logout 
+
+GET    /api/user 
+
+GET    /api/hardware 
+
+POST   /api/hardware/sync 
+
+GET    /api/games 
+
+GET    /api/games/:slug 
+
+GET    /api/search 
+
+POST   /api/upgrade 
+
+POST   /api/ai/chat 
+
+GET    /api/profile 
+
+PATCH  /api/profile 
+
+GET    /api/settings 
+
+PATCH  /api/settings 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+External Integrations 
+
+Authentication 
+
+•  Auth.js (NextAuth) 
+•  Google OAuth 
+•  GitHub OAuth 
+•  Email/Password 
+
+AI 
+
+•  OpenRouter API 
+•  GPT-5.5 / Claude Sonnet / Gemini models (user-selectable if desired) 
+
+Game Data 
+
+IGDB API (game metadata) 
+
+• 
+•  RAWG API (fallback for covers/screenshots) 
+
+Local Pricing 
+
+Rather than scraping stores directly, maintain a normalized HardwarePrice table updated 
+by scheduled jobs or approved data sources. This lets recommendations remain fast and 
+consistent while supporting country-specific pricing (EGP, SAR, USD, etc.). 
+
+Email 
+
+•  Resend 
+
+Analytics 
+
+•  PostHog or Umami 
+•  Google Analytics (optional) 
+
+Error Monitoring 
+
+•  Sentry 
+
+Suggested AI Features 
+
+Instead of a simple chatbot, give the AI structured capabilities: 
+
+•  Explain why a game performs poorly on the user's PC. 
+•  Recommend the best upgrade within a specified budget. 
+•  Compare two GPUs or CPUs in the context of the user's hardware. 
+•  Suggest optimal in-game graphics settings to reach a target FPS. 
+•  Recommend games that are well suited to the user's current hardware. 
+•  Answer hardware-related questions using the user's synced PC profile as context. 
+
+ 
+ 
+

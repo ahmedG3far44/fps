@@ -1,0 +1,472 @@
+# Feature: Game Price Comparison (Official Stores & Authorized Resellers)
+
+Implement a complete "Game Price Comparison" feature for the FrameWise AI platform.
+
+The purpose of this feature is to allow users to see the cheapest legitimate place to buy a game directly from the Game Details page.
+
+We ONLY support:
+
+## Official Stores
+
+- Steam
+- Epic Games Store
+- EA App
+- Ubisoft Connect
+- GOG
+- Battle.net
+- Microsoft Store
+- Rockstar Launcher
+
+## Authorized Resellers
+
+- Humble Bundle
+- Fanatical
+- Green Man Gaming
+- Gamesplanet
+
+DO NOT include:
+
+- G2A
+- CDKeys
+- Kinguin
+- Eneba
+- Any gray-market key seller
+
+This feature should only appear for PAID games.
+
+If a game is free, the section should not render.
+
+---
+
+# Tech Stack
+
+Frontend:
+- Next.js 15 App Router
+- React 19
+- TypeScript
+- TailwindCSS
+- shadcn/ui
+- Server Components by default
+- Server Actions
+- TanStack Query
+- React Hook Form
+- Zod
+
+Backend:
+- Next.js Route Handlers
+- Prisma ORM
+- SQLite for development
+- PostgreSQL for production
+
+Authentication:
+- Auth.js
+
+Caching:
+- Redis optional
+
+Deployment:
+- Vercel
+
+---
+
+# Data Provider
+
+Use IsThereAnyDeal API.
+
+Documentation:
+https://docs.isthereanydeal.com/
+
+Use ONLY legitimate stores and official reseller data.
+
+The API already excludes gray-market stores and is intended for official deals and authorized sellers.
+
+Never scrape websites.
+
+Never use unofficial APIs.
+
+Use IsThereAnyDeal as the single source of truth.
+
+---
+
+# Feature Requirements
+
+When the user opens:
+
+/games/[slug]
+
+Fetch all available prices for that game.
+
+Show:
+
+- Store name
+- Store logo
+- Current price
+- Original price
+- Discount percentage
+- Currency
+- Buy URL
+- Official or Authorized badge
+- Best Deal indicator
+
+Sort ascending by price.
+
+The cheapest available offer must appear first.
+
+---
+
+# Best Deal
+
+The cheapest price should be highlighted.
+
+Display:
+
+BEST DEAL badge.
+
+Use:
+
+- larger card
+- border accent
+- stronger shadow
+- badge
+- CTA button
+
+Example:
+
+BEST DEAL
+Steam
+$29.99
+40% OFF
+Buy Now →
+
+---
+
+# Store Sections
+
+Render:
+
+## Best Deal
+
+Single highlighted card.
+
+## Official Stores
+
+List all official stores.
+
+## Authorized Resellers
+
+List all authorized resellers.
+
+If no offers exist:
+
+Do not render the section.
+
+---
+
+# Free Games
+
+If:
+
+game.isFree === true
+
+Do not render:
+
+Price Comparison
+Best Deal
+Official Stores
+Authorized Resellers
+
+Instead render:
+
+Available for Free.
+
+---
+
+# Region Support
+
+Prices must be localized.
+
+Examples:
+
+Egypt → EGP
+Saudi Arabia → SAR
+USA → USD
+Germany → EUR
+
+Use:
+
+user.country
+
+to request regional prices.
+
+The API request must use country.
+
+Never hardcode currencies.
+
+---
+
+# Navigation
+
+Clicking:
+
+Buy Now
+
+should open:
+
+offer.buyUrl
+
+using:
+
+target="_blank"
+rel="noopener noreferrer"
+
+---
+
+# Database Schema
+
+Create:
+
+Store
+GameStorePrice
+
+Prisma:
+
+model Store {
+  id           String @id @default(cuid())
+  name         String
+  slug         String @unique
+  logoUrl      String?
+  type         StoreType
+
+  prices       GameStorePrice[]
+}
+
+enum StoreType {
+  OFFICIAL
+  AUTHORIZED_RESELLER
+}
+
+model GameStorePrice {
+  id            String   @id @default(cuid())
+
+  gameId        String
+  storeId       String
+
+  countryCode   String
+  currency      String
+
+  currentPrice  Decimal
+  originalPrice Decimal?
+
+  discount      Int?
+
+  buyUrl        String
+
+  updatedAt     DateTime @updatedAt
+
+  game          Game @relation(fields:[gameId], references:[id])
+  store         Store @relation(fields:[storeId], references:[id])
+
+  @@index([gameId])
+  @@index([countryCode])
+}
+
+---
+
+# Services
+
+Create:
+
+services/game-pricing/
+
+game-pricing.service.ts
+itad.service.ts
+itad.mapper.ts
+price-utils.ts
+
+Responsibilities:
+
+itad.service.ts
+
+Fetch data from IsThereAnyDeal.
+
+itad.mapper.ts
+
+Map external DTOs into internal DTOs.
+
+price-utils.ts
+
+Sort prices.
+
+Find best deal.
+
+Calculate discounts.
+
+game-pricing.service.ts
+
+Business logic.
+
+---
+
+# API Route
+
+GET:
+
+/api/games/[slug]/prices
+
+Response:
+
+{
+  "bestDeal": {},
+  "officialStores": [],
+  "authorizedResellers": []
+}
+
+---
+
+# Server Action
+
+Create:
+
+getGamePrices(gameId, country)
+
+Use:
+
+cache()
+
+or
+
+unstable_cache()
+
+to cache responses.
+
+Cache for:
+
+12 hours.
+
+---
+
+# UI Components
+
+components/game-pricing/
+
+BestDealCard.tsx
+
+PriceCard.tsx
+
+StoreSection.tsx
+
+PriceComparison.tsx
+
+PriceSkeleton.tsx
+
+PriceError.tsx
+
+---
+
+# Component Hierarchy
+
+PriceComparison
+
+├── BestDealCard
+├── StoreSection
+│   ├── PriceCard
+│   ├── PriceCard
+│   └── PriceCard
+└── StoreSection
+
+---
+
+# Sorting
+
+Always:
+
+sort by currentPrice ASC
+
+Cheapest first.
+
+Best deal:
+
+prices[0]
+
+---
+
+# Empty State
+
+If:
+
+prices.length === 0
+
+Render:
+
+No official prices currently available.
+
+---
+
+# Error State
+
+If API fails:
+
+Unable to load current prices.
+
+Try again later.
+
+---
+
+# Performance
+
+Use:
+
+Server Components.
+
+Avoid client components unless required.
+
+Cache responses.
+
+Avoid waterfalls.
+
+Parallelize requests.
+
+Use Suspense.
+
+Use streaming.
+
+---
+
+# Accessibility
+
+Buttons must be keyboard accessible.
+
+Badges must have aria labels.
+
+Links must be accessible.
+
+Color cannot be the only indicator.
+
+---
+
+# Deliverables
+
+Generate:
+
+- Prisma models
+- Zod schemas
+- API routes
+- Services
+- DTOs
+- Server Actions
+- UI components
+- Loading states
+- Error states
+- TypeScript types
+- Folder structure
+- Caching strategy
+- Complete implementation
+
+Follow:
+
+- Clean Architecture
+- Feature-based architecture
+- SOLID principles
+- Type-safe code
+- Reusable components
+- Production-ready standards
