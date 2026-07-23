@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
+import { User, Monitor, MessageSquare, Globe } from "lucide-react"
 
 interface Currency {
   id: string
@@ -18,64 +19,72 @@ interface Country {
   currency: Currency | null
 }
 
+interface ProfileData {
+  id: string
+  name: string | null
+  email: string | null
+  image: string | null
+  country: { code: string } | null
+  hardware: unknown | null
+  _count: {
+    searchHistory: number
+    aiConversations: number
+  }
+}
+
 export default function SettingsPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
-  const [theme, setTheme] = useState("dark")
   const [countryId, setCountryId] = useState<string>("")
-  const [currencyId, setCurrencyId] = useState<string>("")
   const [countries, setCountries] = useState<Country[]>([])
-  const [currencies, setCurrencies] = useState<Currency[]>([])
   const [saved, setSaved] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [profile, setProfile] = useState<ProfileData | null>(null)
 
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login")
       return
     }
-
     if (status !== "authenticated") return
 
-    async function loadSettings() {
+    async function loadData() {
       try {
-        const [settingsRes, countriesRes, currenciesRes] = await Promise.all([
+        const [settingsRes, countriesRes, profileRes] = await Promise.all([
           fetch("/api/settings"),
           fetch("/api/countries"),
-          fetch("/api/currencies"),
+          fetch("/api/profile"),
         ])
-
         if (settingsRes.ok) {
           const settings = await settingsRes.json()
-          setTheme(settings.theme ?? "dark")
           setCountryId(settings.countryId ?? "")
-          setCurrencyId(settings.currencyId ?? "")
         }
-
         if (countriesRes.ok) {
           const data = await countriesRes.json()
           setCountries(data)
         }
-
-        if (currenciesRes.ok) {
-          const data = await currenciesRes.json()
-          setCurrencies(data)
+        if (profileRes.ok) {
+          const data = await profileRes.json()
+          setProfile(data)
         }
       } catch {
-        // Use defaults
+        // defaults
       } finally {
         setLoading(false)
       }
     }
-
-    loadSettings()
+    loadData()
   }, [status, router])
 
   async function handleSave() {
+    const selected = countries.find((c) => c.id === countryId)
     const res = await fetch("/api/settings", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ theme, countryId: countryId || null, currencyId: currencyId || null }),
+      body: JSON.stringify({
+        countryId: countryId || null,
+        currencyId: selected?.currency?.id || null,
+      }),
     })
     if (res.ok) {
       setSaved(true)
@@ -83,102 +92,80 @@ export default function SettingsPage() {
     }
   }
 
+  const selectedCountry = countries.find((c) => c.id === countryId)
+
   if (loading) {
     return (
-      <div className="space-y-8">
-        <h1 className="text-3xl font-bold">Settings</h1>
-        <div className="rounded-xl border border-border bg-card p-6 max-w-lg">
-          <div className="space-y-4">
-            <div className="h-10 w-full animate-pulse rounded-lg bg-muted-background" />
-            <div className="h-10 w-full animate-pulse rounded-lg bg-muted-background" />
-            <div className="h-10 w-full animate-pulse rounded-lg bg-muted-background" />
-            <div className="h-10 w-full animate-pulse rounded-lg bg-muted-background" />
-          </div>
+      <div className="space-y-6 md:space-y-8">
+        <h1 className="text-headline-md">Settings</h1>
+        <div className="kinetic-card p-6 max-w-lg">
+          <div className="h-10 w-full animate-pulse rounded-lg bg-surface-container-high" />
         </div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-8">
-      <h1 className="text-3xl font-bold">Settings</h1>
+    <div className="space-y-6 md:space-y-8">
+      <h1 className="text-headline-md">Settings</h1>
 
-      <div className="rounded-xl border border-border bg-card p-6 space-y-6 max-w-lg">
-        <div>
-          <label className="block text-sm font-medium mb-1">Theme</label>
-          <select
-            value={theme}
-            onChange={(e) => setTheme(e.target.value)}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-          >
-            <option value="dark">Dark</option>
-            <option value="light">Light</option>
-          </select>
+      {profile && (
+        <div className="kinetic-card p-4 md:p-6 space-y-4 md:space-y-6">
+          <div className="flex items-center gap-4">
+            <div className="size-14 md:size-16 rounded-full bg-primary-container/10 flex items-center justify-center text-xl font-bold text-primary-container shrink-0">
+              {(profile.name || "U")[0].toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-headline-sm truncate">{profile.name || "Unnamed"}</h2>
+              <p className="text-sm text-on-surface-variant truncate">{profile.email}</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+            <StatCard icon={MessageSquare} value={profile._count.aiConversations} label="AI Chats" />
+            <StatCard icon={Monitor} value={profile.hardware ? 1 : 0} label="PC Profiles" />
+            <StatCard icon={Globe} value={profile.country?.code || "--"} label="Country" />
+          </div>
         </div>
+      )}
 
+      <div className="kinetic-card p-4 md:p-6 space-y-6 max-w-lg">
         <div>
-          <label className="block text-sm font-medium mb-1">Region</label>
+          <label className="text-label-caps text-on-surface-variant block mb-1.5">Region</label>
           <select
             value={countryId}
-            onChange={(e) => {
-              const selectedId = e.target.value
-              setCountryId(selectedId)
-              const selected = countries.find((c) => c.id === selectedId)
-              if (selected?.currency) {
-                setCurrencyId(selected.currency.id)
-              }
-            }}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            onChange={(e) => setCountryId(e.target.value)}
+            className="kinetic-input w-full appearance-none"
           >
-            <option value="">Auto-detect from IP</option>
+            <option value="" className="bg-surface">Auto-detect from IP</option>
             {countries.map((country) => (
-              <option key={country.id} value={country.id}>
+              <option key={country.id} value={country.id} className="bg-surface">
                 {country.name} ({country.code})
-                {country.currency ? ` — ${country.currency.symbol} ${country.currency.code}` : ""}
+                {country.currency ? ` ${country.currency.symbol} ${country.currency.code}` : ""}
               </option>
             ))}
           </select>
-          <p className="mt-1 text-xs text-muted">
-            Used for regional pricing. Selecting a region will auto-set the default currency.
-          </p>
+          {selectedCountry?.currency && (
+            <p className="mt-1 text-xs text-on-surface-variant">
+              Currency: {selectedCountry.currency.symbol} {selectedCountry.currency.code}
+            </p>
+          )}
         </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1">Default Currency</label>
-          <select
-            value={currencyId}
-            onChange={(e) => setCurrencyId(e.target.value)}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-          >
-            <option value="">Auto (based on region)</option>
-            {currencies.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.symbol} {c.code} — {c.name}
-              </option>
-            ))}
-          </select>
-          <p className="mt-1 text-xs text-muted">
-            Override the region-based currency. Used for game price comparison.
-          </p>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">Language</label>
-          <select
-            defaultValue="en"
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-          >
-            <option value="en">English</option>
-          </select>
-        </div>
-
-        <button
-          onClick={handleSave}
-          className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity"
-        >
+        <button onClick={handleSave} className="kinetic-btn-primary">
           {saved ? "Saved!" : "Save Settings"}
         </button>
       </div>
+    </div>
+  )
+}
+
+function StatCard({ icon: Icon, value, label }: { icon: React.ComponentType<{ className?: string }>; value: string | number; label: string }) {
+  return (
+    <div className="rounded-lg bg-surface-container-low p-3 md:p-4 text-center">
+      <Icon className="size-4 mx-auto mb-1 text-on-surface-variant" />
+      <p className="text-data-mono-lg text-primary-container">{value}</p>
+      <p className="text-label-caps text-on-surface-variant mt-0.5">{label}</p>
     </div>
   )
 }

@@ -82,7 +82,7 @@ export function Navbar() {
               </svg>
             </div>
             <span className="text-lg font-bold text-foreground">
-              FrameWise AI
+              FPS
             </span>
           </Link>
 

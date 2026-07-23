@@ -1,6 +1,8 @@
 "use client"
 
 import { useState } from "react"
+import { useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
 
 interface ResolutionData {
@@ -118,12 +120,22 @@ const pipelineColors = [
 ]
 
 export function FPSPipelineDashboard({ gameTitle, gameDescription }: Props) {
+  const { data: session, status } = useSession()
+  const router = useRouter()
   const [data, setData] = useState<Record<string, ResolutionData> | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [expandedCard, setExpandedCard] = useState<string | null>(null)
 
   const estimate = async () => {
+    if (status !== "authenticated" || !session) {
+      router.push("/login")
+      return
+    }
+    if (!session.user.onboarded) {
+      router.push("/onboarding")
+      return
+    }
     setLoading(true)
     setError("")
     setData(null)

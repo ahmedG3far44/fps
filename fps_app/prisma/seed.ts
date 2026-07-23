@@ -1,5 +1,6 @@
 import "dotenv/config"
 import path from "path"
+import bcrypt from "bcryptjs"
 import { PrismaClient } from "../src/generated/prisma/client"
 import { PrismaLibSql } from "@prisma/adapter-libsql"
 
@@ -182,6 +183,19 @@ async function seedCountries() {
 async function main() {
   await seedCurrencies()
   await seedCountries()
+
+  const passwordHash = await bcrypt.hash("admin123", 12)
+  await prisma.user.upsert({
+    where: { email: "admin@example.com" },
+    update: {},
+    create: {
+      name: "Admin",
+      email: "admin@example.com",
+      passwordHash,
+      role: "ADMIN",
+    },
+  })
+  console.log("Default admin created: admin@example.com / admin123")
 
   const usd = currenciesById["USD"]!
   const us = await prisma.country.findUnique({ where: { code: "US" } })

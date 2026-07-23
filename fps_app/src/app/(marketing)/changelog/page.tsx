@@ -5,7 +5,7 @@ export default function ChangelogPage() {
       <div className="space-y-8">
         <div>
           <h2 className="text-xl font-semibold">v1.0.0 - Initial Release</h2>
-          <p className="text-sm text-muted mt-2">First public release of FrameWise AI.</p>
+          <p className="text-sm text-muted mt-2">First public release of FPS.</p>
           <ul className="mt-2 space-y-1 text-sm text-muted list-disc list-inside">
             <li>Hardware detection via companion app</li>
             <li>Game database with FPS predictions</li>

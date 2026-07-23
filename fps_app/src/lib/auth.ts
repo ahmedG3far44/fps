@@ -37,6 +37,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (!user || !user.passwordHash) return null
 
+        if (user.blocked) return null
+
         const isValid = await bcrypt.compare(
           credentials.password as string,
           user.passwordHash
@@ -50,15 +52,37 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           name: user.name,
           image: user.image,
           role: user.role,
+          onboarded: user.onboarded,
         }
       },
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async signIn({ user, account }) {
+      if (account?.provider === "credentials") return true
+
+      const dbUser = await prisma.user.findUnique({
+        where: { id: user.id },
+        select: { blocked: true },
+      })
+      if (dbUser?.blocked) return false
+      return true
+    },
+    async jwt({ token, user, trigger }) {
       if (user) {
         token.role = user.role
         token.id = user.id
+        token.onboarded = user.onboarded
+      }
+      if (trigger === "update") {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.id as string },
+          select: { onboarded: true, role: true },
+        })
+        if (dbUser) {
+          token.onboarded = dbUser.onboarded
+          token.role = dbUser.role
+        }
       }
       return token
     },
@@ -66,6 +90,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (session.user) {
         session.user.role = token.role as string
         session.user.id = token.id as string
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.id as string },
+          select: { onboarded: true },
+        })
+        session.user.onboarded = dbUser?.onboarded ?? false
       }
       return session
     },

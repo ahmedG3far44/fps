@@ -9,9 +9,9 @@ export function FPSChip({ fps, className }: FPSChipProps) {
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold text-white",
+        "inline-flex items-center rounded-full px-2.5 py-0.5 text-label-caps text-white",
         getFPSBgColor(fps),
-        className
+        className,
       )}
     >
       {fps} FPS - {getFPSLabel(fps)}

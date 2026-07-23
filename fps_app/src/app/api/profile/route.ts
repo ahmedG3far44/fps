@@ -19,6 +19,7 @@ export async function GET() {
       country: true,
       currency: true,
       hardware: true,
+      _count: { select: { searchHistory: true, aiConversations: true } },
     },
   })
 

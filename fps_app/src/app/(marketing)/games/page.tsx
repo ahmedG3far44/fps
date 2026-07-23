@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from "react"
 import { GameCard } from "@/components/shared/game-card"
+import { KineticSelect } from "@/components/ui/kinetic-select"
+import { Search, Filter } from "lucide-react"
 
 interface RawgGame {
   id: number
@@ -101,6 +103,7 @@ export default function GamesPage() {
   const [genre, setGenre] = useState("")
   const [publisher, setPublisher] = useState("")
   const [rating, setRating] = useState("")
+  const [showFilters, setShowFilters] = useState(false)
   const [loadMore, setLoadMore] = useState(0)
   const observerRef = useRef<HTMLDivElement>(null)
   const pageRef = useRef(1)
@@ -163,88 +166,68 @@ export default function GamesPage() {
 
   return (
     <div className="relative min-h-screen -mt-16 pt-16">
-      <div
-        className="fixed inset-0 bg-contain bg-center bg-no-repeat"
-        style={{ backgroundImage: "url(/wallpaper.jpg)" }}
-      />
+      <div className="fixed inset-0 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: "url(/wallpaper.jpg)" }} />
       <div className="fixed inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/80" />
       <div className="fixed inset-0 backdrop-blur-[1px]" />
-      <div className="relative z-10 mx-auto max-w-7xl px-4 py-12">
-        <h1 className="text-4xl font-bold text-white mb-2">Browse Games</h1>
-        <p className="text-gray-400 mb-8">Discover thousands of games and check their performance</p>
 
-        <input
-          type="text"
-          placeholder="Search games..."
-          value={search}
-          onChange={(e) => {
-            const v = e.target.value
-            setSearch(v)
-            searchWithFilters(v, year, genre, publisher, rating)
-          }}
-          className="w-full max-w-md mb-4 px-4 py-2.5 rounded-lg border border-white/20 bg-white/10 text-white placeholder-gray-400 backdrop-blur-md focus:outline-none focus:border-primary/50"
-        />
+      <div className="relative z-10 container-kinetic py-8 md:py-12">
+        <h1 className="text-display-lg text-white mb-2">Browse Games</h1>
+        <p className="text-body-lg text-on-surface-variant mb-6 md:mb-8">
+          Discover thousands of games and check their performance
+        </p>
 
-        <div className="flex flex-wrap gap-2 mb-8">
-          <select
+        <div className="relative w-full max-w-md mb-4">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-on-surface-variant" />
+          <input
+            type="text"
+            placeholder="Search games..."
+            value={search}
+            onChange={(e) => {
+              const v = e.target.value
+              setSearch(v)
+              searchWithFilters(v, year, genre, publisher, rating)
+            }}
+            className="kinetic-input w-full pl-9 bg-white/10 border-white/20 text-white placeholder-gray-400 backdrop-blur-md"
+          />
+        </div>
+
+        <button
+          onClick={() => setShowFilters(!showFilters)}
+          className="md:hidden flex items-center gap-2 text-sm text-on-surface-variant hover:text-on-surface mb-4"
+        >
+          <Filter className="size-4" />
+          {showFilters ? "Hide Filters" : "Show Filters"}
+        </button>
+
+        <div className={`flex flex-wrap gap-2 mb-8 ${showFilters ? "flex" : "hidden md:flex"}`}>
+          <KineticSelect
             value={year}
-            onChange={(e) => {
-              const v = e.target.value
-              setYear(v)
-              searchWithFilters(search, v, genre, publisher, rating)
-            }}
-            className="px-3 py-2 rounded-lg border border-white/20 bg-white/10 text-white text-sm backdrop-blur-md focus:outline-none focus:border-primary/50 appearance-none cursor-pointer"
-          >
-            {YEARS.map((y) => (
-              <option key={y.value} value={y.value} className="bg-black text-white">{y.label}</option>
-            ))}
-          </select>
-
-          <select
+            onChange={(v) => { setYear(v); searchWithFilters(search, v, genre, publisher, rating) }}
+            options={YEARS}
+            className="w-32"
+          />
+          <KineticSelect
             value={genre}
-            onChange={(e) => {
-              const v = e.target.value
-              setGenre(v)
-              searchWithFilters(search, year, v, publisher, rating)
-            }}
-            className="px-3 py-2 rounded-lg border border-white/20 bg-white/10 text-white text-sm backdrop-blur-md focus:outline-none focus:border-primary/50 appearance-none cursor-pointer"
-          >
-            {GENRES.map((g) => (
-              <option key={g.value} value={g.value} className="bg-black text-white">{g.label}</option>
-            ))}
-          </select>
-
-          <select
+            onChange={(v) => { setGenre(v); searchWithFilters(search, year, v, publisher, rating) }}
+            options={GENRES}
+            className="w-36"
+          />
+          <KineticSelect
             value={publisher}
-            onChange={(e) => {
-              const v = e.target.value
-              setPublisher(v)
-              searchWithFilters(search, year, genre, v, rating)
-            }}
-            className="px-3 py-2 rounded-lg border border-white/20 bg-white/10 text-white text-sm backdrop-blur-md focus:outline-none focus:border-primary/50 appearance-none cursor-pointer"
-          >
-            {PUBLISHERS.map((p) => (
-              <option key={p.value} value={p.value} className="bg-black text-white">{p.label}</option>
-            ))}
-          </select>
-
-          <select
+            onChange={(v) => { setPublisher(v); searchWithFilters(search, year, genre, v, rating) }}
+            options={PUBLISHERS}
+            className="w-44"
+          />
+          <KineticSelect
             value={rating}
-            onChange={(e) => {
-              const v = e.target.value
-              setRating(v)
-              searchWithFilters(search, year, genre, publisher, v)
-            }}
-            className="px-3 py-2 rounded-lg border border-white/20 bg-white/10 text-white text-sm backdrop-blur-md focus:outline-none focus:border-primary/50 appearance-none cursor-pointer"
-          >
-            {RATINGS.map((r) => (
-              <option key={r.value} value={r.value} className="bg-black text-white">{r.label}</option>
-            ))}
-          </select>
+            onChange={(v) => { setRating(v); searchWithFilters(search, year, genre, publisher, v) }}
+            options={RATINGS}
+            className="w-32"
+          />
         </div>
 
         {games.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
             {games.map((game) => (
               <GameCard
                 key={game.id}
@@ -252,16 +235,19 @@ export default function GamesPage() {
                 title={game.name}
                 coverUrl={game.background_image}
                 genre={game.genres?.[0]?.name}
+                rating={game.rating}
+                metacritic={game.metacritic ?? undefined}
+                released={game.released ?? undefined}
               />
             ))}
           </div>
         ) : !loading && (
-          <p className="text-gray-400 text-center mt-20">No games found. Try a different search.</p>
+          <p className="text-on-surface-variant text-center mt-20">No games found. Try a different search.</p>
         )}
 
         {loading && (
           <div className="flex justify-center mt-8">
-            <div className="w-8 h-8 border-2 border-primary/50 border-t-primary rounded-full animate-spin" />
+            <div className="size-6 border-2 border-primary-container/30 border-t-primary-container rounded-full animate-spin" />
           </div>
         )}
         <div ref={observerRef} className="h-10" />

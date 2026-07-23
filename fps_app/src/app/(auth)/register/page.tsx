@@ -15,8 +15,10 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    if (status === "authenticated") router.push("/games")
-  }, [status, router])
+    if (status === "authenticated") {
+      router.push(session?.user?.onboarded ? "/dashboard" : "/onboarding")
+    }
+  }, [status, session, router])
 
   if (status === "authenticated") return null
 
@@ -38,107 +40,100 @@ export default function RegisterPage() {
         return
       }
 
-      const result = await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
-      })
+      const result = await signIn("credentials", { email, password, redirect: false })
 
-      if (result?.ok) {
-        router.push("/games")
+      if (result?.error) {
+        setError("Account created but sign-in failed. Please log in.")
+      } else if (result?.ok) {
+        router.push("/onboarding")
         router.refresh()
       }
     } catch {
-      setError("Something went wrong")
+      setError("Something went wrong. Please try again.")
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="w-full max-w-sm">
-      <h1 className="text-2xl font-bold text-center mb-8">Create Account</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {error && (
-          <div className="rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-2 text-sm text-red-500">
-            {error}
+    <div className="flex min-h-screen items-center justify-center p-4">
+      <div className="w-full max-w-lg kinetic-card p-6 md:p-8">
+        <h1 className="text-headline-md text-center mb-8">Create Account</h1>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="rounded-lg bg-error-container/10 border border-error/20 px-4 py-2 text-sm text-error">
+              {error}
+            </div>
+          )}
+          <div>
+            <label htmlFor="name" className="text-label-caps text-on-surface-variant block mb-1.5">
+              Name
+            </label>
+            <input
+              id="name"
+              type="text"
+              value={name}
+              onChange={(e) => { setName(e.target.value); setError("") }}
+              className="kinetic-input w-full"
+              disabled={loading}
+            />
           </div>
-        )}
-        <div>
-          <label htmlFor="name" className="block text-sm font-medium mb-1">
-            Name
-          </label>
-          <input
-            id="name"
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-          />
-        </div>
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium mb-1">
-            Email
-          </label>
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-            required
-          />
-        </div>
-        <div>
-          <label htmlFor="password" className="block text-sm font-medium mb-1">
-            Password
-          </label>
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-            required
-            minLength={8}
-          />
-        </div>
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-50"
-        >
-          {loading ? "Creating account..." : "Create Account"}
-        </button>
-      </form>
-      <div className="mt-6 space-y-3">
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-border" />
+          <div>
+            <label htmlFor="email" className="text-label-caps text-on-surface-variant block mb-1.5">
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => { setEmail(e.target.value); setError("") }}
+              className="kinetic-input w-full"
+              disabled={loading}
+              required
+            />
           </div>
-          <div className="relative flex justify-center text-xs">
-            <span className="bg-background px-2 text-muted">Or continue with</span>
+          <div>
+            <label htmlFor="password" className="text-label-caps text-on-surface-variant block mb-1.5">
+              Password
+            </label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => { setPassword(e.target.value); setError("") }}
+              className="kinetic-input w-full"
+              disabled={loading}
+              required
+              minLength={8}
+            />
           </div>
+          <button type="submit" disabled={loading} className="kinetic-btn-primary w-full disabled:opacity-50">
+            {loading ? "Creating account..." : "Create Account"}
+          </button>
+        </form>
+        <div className="mt-6 space-y-3">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-outline-variant" />
+            </div>
+            <div className="relative flex justify-center text-xs">
+              <span className="bg-surface-container px-2 text-on-surface-variant">Or continue with</span>
+            </div>
+          </div>
+          <button onClick={() => signIn("google", { callbackUrl: "/onboarding" })} disabled={loading} className="kinetic-btn-secondary w-full disabled:opacity-50">
+            Google
+          </button>
+          <button onClick={() => signIn("github", { callbackUrl: "/onboarding" })} disabled={loading} className="kinetic-btn-secondary w-full disabled:opacity-50">
+            GitHub
+          </button>
         </div>
-        <button
-          onClick={() => signIn("google", { callbackUrl: "/games" })}
-          className="w-full rounded-lg border border-border px-4 py-2 text-sm hover:bg-card transition-colors"
-        >
-          Google
-        </button>
-        <button
-          onClick={() => signIn("github", { callbackUrl: "/games" })}
-          className="w-full rounded-lg border border-border px-4 py-2 text-sm hover:bg-card transition-colors"
-        >
-          GitHub
-        </button>
+        <p className="mt-6 text-center text-sm text-on-surface-variant">
+          Already have an account?{" "}
+          <Link href="/login" className="text-primary-container hover:underline">
+            Sign in
+          </Link>
+        </p>
       </div>
-      <p className="mt-6 text-center text-sm text-muted">
-        Already have an account?{" "}
-        <Link href="/login" className="text-primary hover:underline">
-          Sign in
-        </Link>
-      </p>
     </div>
   )
 }

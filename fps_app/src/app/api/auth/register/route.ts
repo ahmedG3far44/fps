@@ -16,6 +16,12 @@ export async function POST(req: Request) {
     const existing = await prisma.user.findUnique({ where: { email } })
 
     if (existing) {
+      if (existing.blocked) {
+        return NextResponse.json(
+          { error: "This account has been blocked and cannot register" },
+          { status: 403 }
+        )
+      }
       return NextResponse.json(
         { error: "User with this email already exists" },
         { status: 409 }

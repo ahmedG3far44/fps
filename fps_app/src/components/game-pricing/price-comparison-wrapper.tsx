@@ -1,20 +1,42 @@
 "use client"
 
+import { useCallback } from "react"
 import type { GamePricesResponse, GamePriceDTO } from "@/types/game-pricing"
-import { useCurrency, COMMON_CURRENCIES } from "@/contexts/currency-context"
+import { useCurrency } from "@/contexts/currency-context"
 import { formatPrice } from "@/lib/utils"
+import { getCurrencyForCountry, getCurrencySymbol } from "@/lib/currency"
+
+const COUNTRY_NAMES: Record<string, string> = {
+  US: "United States", GB: "United Kingdom", DE: "Germany", FR: "France",
+  IT: "Italy", ES: "Spain", NL: "Netherlands", BE: "Belgium", AT: "Austria",
+  CH: "Switzerland", SE: "Sweden", NO: "Norway", DK: "Denmark", FI: "Finland",
+  PL: "Poland", CZ: "Czech Republic", PT: "Portugal", IE: "Ireland",
+  HU: "Hungary", RO: "Romania", GR: "Greece", BG: "Bulgaria", HR: "Croatia",
+  LT: "Lithuania", SI: "Slovenia", LV: "Latvia", EE: "Estonia", CY: "Cyprus",
+  MT: "Malta", LU: "Luxembourg", CA: "Canada", AU: "Australia", NZ: "New Zealand",
+  JP: "Japan", KR: "South Korea", BR: "Brazil", MX: "Mexico", AR: "Argentina",
+  CL: "Chile", CO: "Colombia", PE: "Peru", ZA: "South Africa", TR: "Turkey",
+  RU: "Russia", IN: "India", ID: "Indonesia", MY: "Malaysia", PH: "Philippines",
+  SG: "Singapore", TH: "Thailand", VN: "Vietnam", CN: "China", TW: "Taiwan",
+  HK: "Hong Kong", IL: "Israel", SA: "Saudi Arabia", AE: "UAE", QA: "Qatar",
+  KW: "Kuwait", OM: "Oman", BH: "Bahrain", JO: "Jordan", LB: "Lebanon",
+  EG: "Egypt", MA: "Morocco", TN: "Tunisia", DZ: "Algeria", IS: "Iceland",
+  UA: "Ukraine", NG: "Nigeria", KE: "Kenya", PK: "Pakistan", BD: "Bangladesh",
+  LK: "Sri Lanka", UY: "Uruguay", PY: "Paraguay", BO: "Bolivia",
+}
 
 interface PriceComparisonWrapperProps {
   prices: GamePricesResponse
+  country: string | null
 }
 
 function ConvertedPriceCard({ price, convertPrice, targetCurrency }: {
   price: GamePriceDTO
-  convertPrice: (usd: number, rate: number) => number
+  convertPrice: (usd: number) => number
   targetCurrency: string
 }) {
-  const convertedCurrent = convertPrice(price.currentPrice, 1)
-  const convertedOriginal = price.originalPrice !== null ? convertPrice(price.originalPrice, 1) : null
+  const convertedCurrent = convertPrice(price.currentPrice)
+  const convertedOriginal = price.originalPrice !== null ? convertPrice(price.originalPrice) : null
   const convertedSavings = convertedOriginal !== null ? convertedOriginal - convertedCurrent : null
 
   return (
@@ -93,11 +115,11 @@ function ConvertedPriceCard({ price, convertPrice, targetCurrency }: {
 
 function ConvertedBestDealCard({ price, convertPrice, targetCurrency }: {
   price: GamePriceDTO
-  convertPrice: (usd: number, rate: number) => number
+  convertPrice: (usd: number) => number
   targetCurrency: string
 }) {
-  const convertedCurrent = convertPrice(price.currentPrice, 1)
-  const convertedOriginal = price.originalPrice !== null ? convertPrice(price.originalPrice, 1) : null
+  const convertedCurrent = convertPrice(price.currentPrice)
+  const convertedOriginal = price.originalPrice !== null ? convertPrice(price.originalPrice) : null
   const convertedSavings = convertedOriginal !== null ? convertedOriginal - convertedCurrent : null
 
   return (
@@ -193,7 +215,7 @@ function ConvertedStoreSection({ title, prices, icon, convertPrice, targetCurren
   title: string
   prices: GamePriceDTO[]
   icon: "official" | "reseller"
-  convertPrice: (usd: number, rate: number) => number
+  convertPrice: (usd: number) => number
   targetCurrency: string
 }) {
   if (prices.length === 0) return null
@@ -233,9 +255,24 @@ function ConvertedStoreSection({ title, prices, icon, convertPrice, targetCurren
   )
 }
 
-export function PriceComparisonWrapper({ prices }: PriceComparisonWrapperProps) {
-  const { detectedCurrency, displayCurrency, setSelectedCurrency, convertPrice } = useCurrency()
+export function PriceComparisonWrapper({ prices, country }: PriceComparisonWrapperProps) {
+  const { detectedCountry, allRates } = useCurrency()
   const { bestDeal, officialStores, authorizedResellers } = prices
+
+  const effectiveCountry = country || detectedCountry
+  const displayCurrency = effectiveCountry ? getCurrencyForCountry(effectiveCountry) : "USD"
+  const currencySymbol = getCurrencySymbol(displayCurrency)
+  const countryName = effectiveCountry ? COUNTRY_NAMES[effectiveCountry] : null
+
+  const convertPrice = useCallback(
+    (usdPrice: number): number => {
+      if (displayCurrency === "USD") return usdPrice
+      const rate = allRates[displayCurrency]
+      if (!rate) return usdPrice
+      return Math.round(usdPrice * rate * 100) / 100
+    },
+    [displayCurrency, allRates]
+  )
 
   const totalStores = (bestDeal ? 1 : 0) + officialStores.length + authorizedResellers.length
 
@@ -256,25 +293,13 @@ export function PriceComparisonWrapper({ prices }: PriceComparisonWrapperProps) 
           </div>
         </div>
 
-        <div className="relative">
-          <select
-            value={displayCurrency}
-            onChange={(e) => {
-              const val = e.target.value
-              setSelectedCurrency(val === detectedCurrency ? null : val)
-            }}
-            className="appearance-none rounded-full border border-border bg-card pl-3 pr-7 py-1.5 text-xs font-medium text-muted transition-all hover:border-primary/30 hover:text-foreground cursor-pointer"
-          >
-            {COMMON_CURRENCIES.map((c) => (
-              <option key={c.code} value={c.code}>
-                {c.symbol} {c.code} — {c.name}
-              </option>
-            ))}
-          </select>
-          <svg className="pointer-events-none absolute right-2 top-1/2 size-3 -translate-y-1/2 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-          </svg>
-        </div>
+        {effectiveCountry && (
+          <div className="flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted">
+            <span>{countryName || effectiveCountry}</span>
+            <span className="text-muted-foreground">•</span>
+            <span>{currencySymbol} {displayCurrency}</span>
+          </div>
+        )}
       </div>
 
       <div className="space-y-6">

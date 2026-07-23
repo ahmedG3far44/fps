@@ -1,6 +1,8 @@
 "use client"
 
 import { useState } from "react"
+import { useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
 
 interface RawgReqs {
   minimum?: string
@@ -163,6 +165,8 @@ function toSpecs(localReq: LocalReq): { label: string; value: string }[] {
 }
 
 export function SystemRequirements({ rawgReqs, localMinReq, localRecReq, gameTitle, gameDescription }: SystemRequirementsProps) {
+  const { data: session, status } = useSession()
+  const router = useRouter()
   const [generated, setGenerated] = useState<GeneratedReqs | null>(null)
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState("")
@@ -185,6 +189,14 @@ export function SystemRequirements({ rawgReqs, localMinReq, localRecReq, gameTit
   const hasAnyData = minSpecs.length > 0 || recSpecs.length > 0 || hasMinText || hasRecText
 
   const generate = async () => {
+    if (status !== "authenticated" || !session) {
+      router.push("/login")
+      return
+    }
+    if (!session.user.onboarded) {
+      router.push("/onboarding")
+      return
+    }
     setGenerating(true)
     setError("")
     try {

@@ -49,28 +49,12 @@ export async function PriceComparison({ gameId, gameTitle, isFree, country }: Pr
     authorizedResellers.length > 0
 
   if (!hasAnyPrices) {
-    return (
-      <section className="mb-12">
-        <div className="mb-6 flex items-center gap-3">
-          <div className="flex size-10 items-center justify-center rounded-lg bg-muted-background">
-            <svg className="size-5 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-            </svg>
-          </div>
-          <h2 className="text-2xl font-semibold">Price Comparison</h2>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-8 text-center">
-          <p className="text-muted">
-            No official prices currently available for this title.
-          </p>
-        </div>
-      </section>
-    )
+    return null
   }
 
   return (
     <CurrencyProvider>
-      <PriceComparisonWrapper prices={prices} />
+      <PriceComparisonWrapper prices={prices} country={country ?? null} />
     </CurrencyProvider>
   )
 }

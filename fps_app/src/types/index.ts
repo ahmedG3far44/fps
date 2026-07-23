@@ -3,6 +3,7 @@ import type { User } from "next-auth"
 declare module "next-auth" {
   interface User {
     role?: string
+    onboarded?: boolean
   }
   interface Session {
     user: {
@@ -11,6 +12,7 @@ declare module "next-auth" {
       email?: string | null
       image?: string | null
       role: string
+      onboarded?: boolean
     }
   }
 }
