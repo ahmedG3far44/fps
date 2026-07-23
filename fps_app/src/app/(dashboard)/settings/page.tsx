@@ -2,34 +2,47 @@
 
 import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
+
+interface Currency {
+  id: string
+  code: string
+  name: string
+  symbol: string
+}
 
 interface Country {
   id: string
   code: string
   name: string
-  currency: {
-    id: string
-    code: string
-    name: string
-    symbol: string
-  } | null
+  currency: Currency | null
 }
 
 export default function SettingsPage() {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
+  const router = useRouter()
   const [theme, setTheme] = useState("dark")
   const [countryId, setCountryId] = useState<string>("")
   const [currencyId, setCurrencyId] = useState<string>("")
   const [countries, setCountries] = useState<Country[]>([])
+  const [currencies, setCurrencies] = useState<Currency[]>([])
   const [saved, setSaved] = useState(false)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/login")
+      return
+    }
+
+    if (status !== "authenticated") return
+
     async function loadSettings() {
       try {
-        const [settingsRes, countriesRes] = await Promise.all([
+        const [settingsRes, countriesRes, currenciesRes] = await Promise.all([
           fetch("/api/settings"),
           fetch("/api/countries"),
+          fetch("/api/currencies"),
         ])
 
         if (settingsRes.ok) {
@@ -43,6 +56,11 @@ export default function SettingsPage() {
           const data = await countriesRes.json()
           setCountries(data)
         }
+
+        if (currenciesRes.ok) {
+          const data = await currenciesRes.json()
+          setCurrencies(data)
+        }
       } catch {
         // Use defaults
       } finally {
@@ -51,7 +69,7 @@ export default function SettingsPage() {
     }
 
     loadSettings()
-  }, [])
+  }, [status, router])
 
   async function handleSave() {
     const res = await fetch("/api/settings", {
@@ -71,6 +89,7 @@ export default function SettingsPage() {
         <h1 className="text-3xl font-bold">Settings</h1>
         <div className="rounded-xl border border-border bg-card p-6 max-w-lg">
           <div className="space-y-4">
+            <div className="h-10 w-full animate-pulse rounded-lg bg-muted-background" />
             <div className="h-10 w-full animate-pulse rounded-lg bg-muted-background" />
             <div className="h-10 w-full animate-pulse rounded-lg bg-muted-background" />
             <div className="h-10 w-full animate-pulse rounded-lg bg-muted-background" />
@@ -120,7 +139,26 @@ export default function SettingsPage() {
             ))}
           </select>
           <p className="mt-1 text-xs text-muted">
-            Used for game price comparison. Leave empty to auto-detect from your location.
+            Used for regional pricing. Selecting a region will auto-set the default currency.
+          </p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Default Currency</label>
+          <select
+            value={currencyId}
+            onChange={(e) => setCurrencyId(e.target.value)}
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+          >
+            <option value="">Auto (based on region)</option>
+            {currencies.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.symbol} {c.code} — {c.name}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-muted">
+            Override the region-based currency. Used for game price comparison.
           </p>
         </div>
 

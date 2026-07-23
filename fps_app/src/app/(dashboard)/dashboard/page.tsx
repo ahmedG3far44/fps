@@ -2,21 +2,31 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
 import Link from "next/link"
-import { FPSChip } from "@/components/shared/fps-chip"
 
 export default async function DashboardPage() {
   const session = await auth()
   if (!session?.user) redirect("/login")
 
-  const hardware = await prisma.hardware.findUnique({
-    where: { userId: session.user.id },
-  })
+  let hardware: { cpu: string | null; gpu: string | null; ramGB: number | null } | null = null
+  let recentGames: { id: string; query: string }[] = []
 
-  const recentGames = await prisma.searchHistory.findMany({
-    where: { userId: session.user.id },
-    orderBy: { createdAt: "desc" },
-    take: 5,
-  })
+  try {
+    hardware = await prisma.hardware.findUnique({
+      where: { userId: session.user.id },
+    })
+  } catch (e) {
+    console.error("Failed to fetch hardware:", e)
+  }
+
+  try {
+    recentGames = await prisma.searchHistory.findMany({
+      where: { userId: session.user.id },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+    })
+  } catch (e) {
+    console.error("Failed to fetch search history:", e)
+  }
 
   return (
     <div className="space-y-8">

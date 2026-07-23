@@ -6,11 +6,16 @@ export default async function HistoryPage() {
   const session = await auth()
   if (!session?.user) redirect("/login")
 
-  const history = await prisma.searchHistory.findMany({
-    where: { userId: session.user.id },
-    orderBy: { createdAt: "desc" },
-    take: 50,
-  })
+  let history: { id: string; query: string; createdAt: Date }[] = []
+  try {
+    history = await prisma.searchHistory.findMany({
+      where: { userId: session.user.id },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    })
+  } catch (e) {
+    console.error("Failed to fetch search history:", e)
+  }
 
   return (
     <div className="space-y-8">
